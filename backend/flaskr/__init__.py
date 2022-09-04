@@ -197,7 +197,7 @@ def create_app(test_config=None):
             {
                 "success": True,
                 "questions": current_questions,
-                "total_questions": len(Question.query.all()),
+                "total_questions": len(current_questions),
             }
         )
 
@@ -209,6 +209,27 @@ def create_app(test_config=None):
     categories in the left column will cause only questions of that
     category to be shown.
     """
+
+    @app.route("/categories/<int:category_id>/questions")
+    def retrieve_questions_by_category(category_id):
+        selection = Question.query.filter_by(category=str(category_id))
+        current_questions = paginate_questions(request, selection)
+        category_query = Category.query.order_by(Category.id).all()
+        categories = {}
+        for category in category_query:
+            categories[category.id] = category.type
+
+        if len(current_questions) == 0:
+            abort(404)
+
+        return jsonify(
+            {
+                "success": True,
+                "questions": current_questions,
+                "categories": categories,
+                "total_questions": len(current_questions),
+            }
+        )
 
     """
     @TODO:
@@ -222,10 +243,66 @@ def create_app(test_config=None):
     and shown whether they were correct or not.
     """
 
+    @app.route('/quizzes', methods=['POST'])
+    def play_quizzes():
+        body = request.get_json()
+        quizz_category = body.get('quiz_category')
+        category_type = quizz_category['type']
+        category_id = quizz_category['id']
+        previous_questions = body.get('previous_questions')
+        try:
+            if category_type == 'click':
+                questions = Question.query.filter(Question.id.notin_(previous_questions)).all()
+            else:
+                questions = Question.query.filter_by(category=category_id).filter(
+                    Question.id.notin_(previous_questions)).all()
+
+            current_question = questions[random.randrange(0, len(questions))].format() if len(
+                questions) > 0 else None
+
+            return jsonify({
+                'success': True,
+                'question': current_question
+            })
+        except:
+            abort(422)
+
     """
     @TODO:
     Create error handlers for all expected errors
     including 404 and 422.
     """
+
+    @app.errorhandler(500)
+    def server_error(error):
+        return jsonify({
+            "success": False,
+            "error": 500,
+            "message": "Internal Server Error"
+        }), 500
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 404,
+            "message": "resource not found"
+        }), 404
+
+    @app.errorhandler(422)
+    def unprocessable_entity(error):
+        return jsonify({
+            "success": False,
+            "error": 422,
+            "message": "unprocessable action"
+        }), 422
+
+    @app.errorhandler(405)
+    def unauthorized(error):
+        return jsonify({
+            "success": False,
+            "error": 405,
+            "message": "Method not allow"
+        }), 405
 
     return app
