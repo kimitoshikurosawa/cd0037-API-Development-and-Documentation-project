@@ -33,13 +33,6 @@ class TriviaTestCase(unittest.TestCase):
     TODO
     Write at least one test for each test for successful operation and for expected errors.
     """
-    def test_retrieve_categories(self):
-        """ Tests success of retrieve categories"""
-        response = self.client().get('/categories')
-        data = json.loads(response.data)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(data['success'], True)
 
 
 
