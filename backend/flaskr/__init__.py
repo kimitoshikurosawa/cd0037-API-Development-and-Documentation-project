@@ -251,15 +251,12 @@ def create_app(test_config=None):
         category_id = quizz_category['id']
         previous_questions = body.get('previous_questions')
         try:
-            if category_type == 'click':
+            if category_type == 'click' and category_id == 0:
                 questions = Question.query.filter(Question.id.notin_(previous_questions)).all()
             else:
                 questions = Question.query.filter_by(category=category_id).filter(
                     Question.id.notin_(previous_questions)).all()
-
-            current_question = questions[random.randrange(0, len(questions))].format() if len(
-                questions) > 0 else None
-
+            current_question = random.choice(questions).format() if len(questions) > 0 else None
             return jsonify({
                 'success': True,
                 'question': current_question
