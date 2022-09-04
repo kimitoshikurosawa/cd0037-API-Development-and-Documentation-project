@@ -1,4 +1,6 @@
 import os
+import sys
+
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
@@ -81,6 +83,7 @@ def create_app(test_config=None):
     ten questions per page and pagination at the bottom of the screen for three pages.
     Clicking on the page numbers should update the questions.
     """
+
     @app.route("/questions")
     def retrieve_questions():
         selection = Question.query.order_by(Question.id).all()
@@ -110,6 +113,22 @@ def create_app(test_config=None):
     This removal will persist in the database and when you refresh the page.
     """
 
+    @app.route('/questions/<int:question_id>', methods=['DELETE'])
+    def delete_question(question_id):
+        question = Question.query.filter_by(id=question_id).one_or_none()
+        try:
+            if question is None:
+                abort(404)
+
+            question.delete()
+
+            return jsonify({
+                "success": True,
+                "deleted": question_id
+            })
+        except:
+            abort(422)
+
     """
     @TODO:
     Create an endpoint to POST a new question,
@@ -121,6 +140,38 @@ def create_app(test_config=None):
     of the questions list in the "List" tab.
     """
 
+    @app.route('/questions', methods=['POST'])
+    def add_question():
+        body = request.get_json()
+        error = False
+        question = body.get("question", None)
+        answer = body.get("answer", None)
+        difficulty = body.get("difficulty", None)
+        category = body.get("category", None)
+        try:
+            question = Question(question=question,
+                                answer=answer,
+                                difficulty=difficulty,
+                                category=category,
+                                )
+            question.insert()
+            questions = question.query.all()
+            total_questions = len(questions)
+            created = question.id
+        except:
+            error = True
+            print(sys.exc_info())
+
+        if error:
+            abort(400)
+        else:
+            return jsonify({
+                'success': True,
+                'created': created,
+                'total_books': total_questions
+
+            })
+
     """
     @TODO:
     Create a POST endpoint to get questions based on a search term.
@@ -131,6 +182,24 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
+
+    @app.route('/questions/search/', methods=['POST'])
+    def search_questions():
+        body = request.get_json()
+        searchTerm = body.get("searchTerm", None)
+        search = f"%{searchTerm}%"
+        selection = Question.query.filter(Question.question.ilike(search))
+        current_questions = paginate_questions(request, selection)
+        if len(current_questions) == 0:
+            abort(404)
+
+        return jsonify(
+            {
+                "success": True,
+                "questions": current_questions,
+                "total_questions": len(Question.query.all()),
+            }
+        )
 
     """
     @TODO:
