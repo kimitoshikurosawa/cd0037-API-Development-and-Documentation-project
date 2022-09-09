@@ -184,7 +184,7 @@ def create_app(test_config=None):
     @app.route('/questions/search/', methods=['POST'])
     def search_questions():
         body = request.get_json()
-        searchTerm = body.get("searchTerm", None)
+        searchTerm = body.get("searchTerm", '')
         search = f"%{searchTerm}%"
         selection = Question.query.filter(Question.question.ilike(search))
         current_questions = paginate_questions(request, selection)
@@ -247,6 +247,44 @@ def create_app(test_config=None):
         quizz_category = body.get('quiz_category')
         category_id = quizz_category['id']
         previous_questions = body.get('previous_questions')
+        available_question = []
+        try:
+            if category_id == 0:
+                all_question = Question.query.all()
+                for question in all_question:
+                    question_id = question.id
+                    available_question.append(question_id)
+                if not previous_questions:
+                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+                else:
+                    for question in previous_questions:
+                        for i in available_question:
+                            if question == i:
+                                available_question.remove(question)
+                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+            else:
+                all_question_by_category = Question.query.filter_by(category=str(category_id)).all()
+                for question in all_question_by_category:
+                    question_id = question.id
+                    available_question.append(question_id)
+                if not previous_questions:
+
+                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+                else:
+                    for question in previous_questions:
+                        for i in available_question:
+                            if question == i:
+                                available_question.remove(question)
+                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+        except:
+            current_question = None
+
+        return jsonify(
+            {
+                "success": True,
+                "question": current_question,
+            }
+        )
 
     """
     @TODO:
