@@ -98,7 +98,6 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 404)
 
-
     def test_get_question_by_category(self):
         res = self.client().get("/categories/5/questions", json={"quizz_category": 0, "previous_questions": []})
         data = json.loads(res.data)
