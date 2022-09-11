@@ -32,7 +32,7 @@ def create_app(test_config=None):
     """
     CORS(app)
 
-    @app.route('/')
+    @app.route("/")
     @cross_origin()
     def hello():
         return jsonify({'message': 'HELLO WORLD'})
@@ -113,7 +113,7 @@ def create_app(test_config=None):
     This removal will persist in the database and when you refresh the page.
     """
 
-    @app.route('/questions/<int:question_id>', methods=['DELETE'])
+    @app.route("/questions/<int:question_id>", methods=['DELETE'])
     def delete_question(question_id):
         question = Question.query.filter_by(id=question_id).one_or_none()
         try:
@@ -138,7 +138,7 @@ def create_app(test_config=None):
     of the questions list in the "List" tab.
     """
 
-    @app.route('/questions', methods=['POST'])
+    @app.route("/questions", methods=['POST'])
     def add_question():
         body = request.get_json()
         error = False
@@ -166,7 +166,7 @@ def create_app(test_config=None):
             return jsonify({
                 'success': True,
                 'created': created,
-                'total_books': total_questions
+                'total_questions': total_questions
 
             })
 
@@ -181,7 +181,7 @@ def create_app(test_config=None):
     Try using the word "title" to start.
     """
 
-    @app.route('/questions/search/', methods=['POST'])
+    @app.route("/questions/search/", methods=['POST'])
     def search_questions():
         body = request.get_json()
         searchTerm = body.get("searchTerm", '')
@@ -213,6 +213,7 @@ def create_app(test_config=None):
         selection = Question.query.filter_by(category=str(category_id))
         current_questions = paginate_questions(request, selection)
         category_query = Category.query.order_by(Category.id).all()
+        current_category = Category.query.filter_by(id=str(category_id)).one_or_none().format()
         categories = {}
         for category in category_query:
             categories[category.id] = category.type
@@ -225,6 +226,7 @@ def create_app(test_config=None):
                 "success": True,
                 "questions": current_questions,
                 "categories": categories,
+                "current_category": current_category,
                 "total_questions": len(current_questions),
             }
         )
@@ -241,7 +243,7 @@ def create_app(test_config=None):
     and shown whether they were correct or not.
     """
 
-    @app.route('/quizzes', methods=['POST'])
+    @app.route("/quizzes", methods=['POST'])
     def quizzes():
         body = request.get_json()
         quizz_category = body.get('quiz_category')
@@ -255,13 +257,15 @@ def create_app(test_config=None):
                     question_id = question.id
                     available_question.append(question_id)
                 if not previous_questions:
-                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+                    current_question = Question.query.filter_by(
+                        id=random.choice(available_question)).one_or_none().format()
                 else:
                     for question in previous_questions:
                         for i in available_question:
                             if question == i:
                                 available_question.remove(question)
-                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+                    current_question = Question.query.filter_by(
+                        id=random.choice(available_question)).one_or_none().format()
             else:
                 all_question_by_category = Question.query.filter_by(category=str(category_id)).all()
                 for question in all_question_by_category:
@@ -269,13 +273,15 @@ def create_app(test_config=None):
                     available_question.append(question_id)
                 if not previous_questions:
 
-                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+                    current_question = Question.query.filter_by(
+                        id=random.choice(available_question)).one_or_none().format()
                 else:
                     for question in previous_questions:
                         for i in available_question:
                             if question == i:
                                 available_question.remove(question)
-                    current_question = Question.query.filter_by(id=random.choice(available_question)).one_or_none().format()
+                    current_question = Question.query.filter_by(
+                        id=random.choice(available_question)).one_or_none().format()
         except:
             current_question = None
 
