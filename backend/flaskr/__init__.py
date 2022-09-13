@@ -140,13 +140,13 @@ def create_app(test_config=None):
 
     @app.route("/questions", methods=['POST'])
     def add_question():
-        body = request.get_json()
-        error = False
-        question = body.get("question", None)
-        answer = body.get("answer", None)
-        difficulty = body.get("difficulty", None)
-        category = body.get("category", None)
         try:
+            body = request.get_json()
+            error = False
+            question = body.get("question", None)
+            answer = body.get("answer", None)
+            difficulty = body.get("difficulty", None)
+            category = body.get("category", None)
             question = Question(question=question,
                                 answer=answer,
                                 difficulty=difficulty,
@@ -210,13 +210,22 @@ def create_app(test_config=None):
 
     @app.route("/categories/<int:category_id>/questions")
     def retrieve_questions_by_category(category_id):
-        selection = Question.query.filter_by(category=str(category_id))
-        current_questions = paginate_questions(request, selection)
-        category_query = Category.query.order_by(Category.id).all()
-        current_category = Category.query.filter_by(id=str(category_id)).one_or_none().format()
-        categories = {}
-        for category in category_query:
-            categories[category.id] = category.type
+        error = False
+        current_questions = 0
+        try:
+            selection = Question.query.filter_by(category=str(category_id))
+            current_questions = paginate_questions(request, selection)
+            category_query = Category.query.order_by(Category.id).all()
+            current_category = Category.query.filter_by(id=str(category_id)).one_or_none().format()
+            categories = {}
+            for category in category_query:
+                categories[category.id] = category.type
+        except:
+            error = True
+            print(sys.exc_info())
+
+        if error:
+            abort(400)
 
         if len(current_questions) == 0:
             abort(404)
@@ -246,7 +255,10 @@ def create_app(test_config=None):
     @app.route("/quizzes", methods=['POST'])
     def quizzes():
         body = request.get_json()
+        if not body:
+            abort(400)
         quizz_category = body.get('quiz_category')
+
         category_id = quizz_category['id']
         previous_questions = body.get('previous_questions')
         available_question = []
@@ -329,5 +341,13 @@ def create_app(test_config=None):
             "error": 405,
             "message": "Method not allow"
         }), 405
+
+    @app.errorhandler(400)
+    def unauthorized(error):
+        return jsonify({
+            "success": False,
+            "error": 400,
+            "message": "Bad Request"
+        }), 400
 
     return app
